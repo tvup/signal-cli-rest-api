@@ -23,6 +23,16 @@ jobs:
         working-directory: src
         run: go run github.com/swaggo/swag/cmd/swag@v1.16.6 init --requiredByDefault
 
+      - name: Apply receive schemas post-processing
+        working-directory: src/docs
+        run: |
+          SIGNAL_CLI_VERSION=$(grep -E '^ARG SIGNAL_CLI_VERSION=' ../../Dockerfile | head -1 | cut -d= -f2)
+          wget -q "https://github.com/tvup/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}-json-schemas.tar.gz"
+          mkdir signal-cli-schemas
+          tar xf "signal-cli-${SIGNAL_CLI_VERSION}-json-schemas.tar.gz" -C signal-cli-schemas
+          go run add_v1_receive_schemas.go signal-cli-schemas
+          rm -rf signal-cli-schemas "signal-cli-${SIGNAL_CLI_VERSION}-json-schemas.tar.gz"
+
       - name: Fail if docs are out of date
         run: |
           git diff --exit-code -- src/docs/docs.go src/docs/swagger.json src/docs/swagger.yaml
