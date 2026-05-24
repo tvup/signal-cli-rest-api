@@ -43,14 +43,14 @@ ENV LANG en_US.UTF-8
 RUN go install github.com/swaggo/swag/cmd/swag@v${SWAG_VERSION}
 
 RUN cd /tmp/ \
-	&& wget -nv https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}.tar.gz -O /tmp/signal-cli.tar.gz \
+	&& wget -nv https://github.com/tvup/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}.tar.gz -O /tmp/signal-cli.tar.gz \
 	&& tar xf signal-cli.tar.gz
 
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		cd /tmp \
-		&& wget https://github.com/bbernhard/signal-cli-native-builds/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-native-v${SIGNAL_CLI_VERSION}.tar.gz \
-		&& tar xvf signal-cli-native-v${SIGNAL_CLI_VERSION}.tar.gz \
-		&& cp signal-cli-native-v${SIGNAL_CLI_VERSION}/x86-64/signal-cli-native /tmp/signal-cli-native; \
+		&& wget https://github.com/tvup/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}-Linux-native.tar.gz \
+		&& tar xvf signal-cli-${SIGNAL_CLI_VERSION}-Linux-native.tar.gz \
+		&& mv signal-cli /tmp/signal-cli-native; \
 	elif [ "$(uname -m)" = "aarch64" ] ; then \
 		cd /tmp \
 		&& wget https://github.com/bbernhard/signal-cli-native-builds/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-native-v${SIGNAL_CLI_VERSION}.tar.gz \
