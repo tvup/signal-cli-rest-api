@@ -1,5 +1,5 @@
 ARG SIGNAL_CLI_VERSION=0.14.8
-ARG LIBSIGNAL_CLIENT_VERSION=0.92.1
+ARG LIBSIGNAL_CLIENT_VERSION=0.94.1
 
 ARG SWAG_VERSION=1.16.4
 
@@ -46,24 +46,21 @@ RUN cd /tmp/ \
 	&& wget -nv https://github.com/tvup/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}.tar.gz -O /tmp/signal-cli.tar.gz \
 	&& tar xf signal-cli.tar.gz
 
+# tvup/signal-cli currently only publishes an amd64 Linux-native build.
+# Other architectures (arm64, armv7) are not part of the supported
+# target matrix — workflows pin --platform linux/amd64. If multi-arch
+# support is reintroduced later, this block needs an arm64 branch
+# (waiting on tvup/signal-cli to publish arm64-native tarballs) and the
+# armv7 touch-an-empty-file workaround.
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		cd /tmp \
 		&& wget https://github.com/tvup/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}-Linux-native.tar.gz \
 		&& tar xvf signal-cli-${SIGNAL_CLI_VERSION}-Linux-native.tar.gz \
 		&& mv signal-cli /tmp/signal-cli-native; \
-	elif [ "$(uname -m)" = "aarch64" ] ; then \
-		cd /tmp \
-		&& wget https://github.com/bbernhard/signal-cli-native-builds/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-native-v${SIGNAL_CLI_VERSION}.tar.gz \
-		&& tar xvf signal-cli-native-v${SIGNAL_CLI_VERSION}.tar.gz \
-		&& cp signal-cli-native-v${SIGNAL_CLI_VERSION}/arm64/signal-cli-native /tmp/signal-cli-native; \
-    elif [ "$(uname -m)" = "armv7l" ] ; then \
-		echo "GRAALVM doesn't support 32bit" \
-		&& echo "Creating temporary file, otherwise the below copy doesn't work for armv7" \
-		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile \
-		&& touch /tmp/signal-cli-native; \
-    else \
-		echo "Unknown architecture"; \
-    fi;
+	else \
+		echo "Unsupported architecture $(uname -m) — workflows should pin linux/amd64" \
+		&& exit 1; \
+	fi;
 
 # replace libsignal-client
 
@@ -154,12 +151,6 @@ RUN userdel ubuntu -r \
 	&& ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native \
 	&& mkdir -p /signal-cli-config/ \
 	&& mkdir -p /home/.local/share/signal-cli
-
-# remove the temporary created signal-cli-native on armv7, as GRAALVM doesn't support 32bit
-RUN arch="$(uname -m)"; \
-        case "$arch" in \
-            armv7l) echo "GRAALVM doesn't support 32bit" && rm /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native  ;; \
-        esac;
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
